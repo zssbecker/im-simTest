@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>아이엠뱅크 여신심사시스템 | 재무제표 입력 대행</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0B2545;
+    --navy-mid: #133A6A;
+    --blue: #1A5FAD;
+    --blue-light: #2A78D0;
+    --accent: #F0A500;
+    --success: #1E8C5A;
+    --danger: #C0392B;
+    --warn: #D97706;
+    --bg: #EEF1F6;
+    --bg-card: #FFFFFF;
+    --border: #C8D3E0;
+    --border-light: #DDE5EE;
+    --text-main: #1A2535;
+    --text-sub: #506070;
+    --text-muted: #8A9BAB;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'Noto Sans KR', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--sans); background: var(--bg); color: var(--text-main); font-size: 13px; line-height: 1.5; }
+
+  /* ── TOP BAR ── */
+  #topbar {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
+    color: #fff; padding: 0 20px;
+    display: flex; align-items: center; gap: 16px;
+    height: 52px; position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  }
+  .logo-badge {
+    background: var(--accent); color: var(--navy);
+    font-weight: 700; font-size: 11px; padding: 3px 7px; border-radius: 3px;
+    letter-spacing: 0.5px;
+  }
+  #topbar h1 { font-size: 14px; font-weight: 600; letter-spacing: 0.3px; }
+  .topbar-sub { font-size: 11px; color: rgba(255,255,255,0.55); margin-left: auto; }
+  .topbar-user {
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+    color: #fff; font-size: 11px; padding: 4px 10px; border-radius: 3px;
+  }
+
+  /* ── LAYOUT ── */
+  #layout { display: flex; height: calc(100vh - 52px); overflow: hidden; }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    width: 220px; flex-shrink: 0;
+    background: var(--navy); color: #fff;
+    overflow-y: auto; display: flex; flex-direction: column;
+    border-right: 1px solid rgba(255,255,255,0.06);
+  }
+  .sidebar-section-title {
+    font-size: 10px; font-weight: 600; letter-spacing: 1.2px;
+    color: rgba(255,255,255,0.35); padding: 14px 14px 6px;
+    text-transform: uppercase;
+  }
+  .week-item {
+    padding: 8px 14px; cursor: pointer; border-left: 3px solid transparent;
+    transition: all 0.15s; display: flex; align-items: center; gap: 8px;
+    font-size: 12px;
+  }
+  .week-item:hover { background: rgba(255,255,255,0.07); }
+  .week-item.active { background: rgba(26,95,173,0.35); border-left-color: var(--accent); }
+  .week-item.done { opacity: 0.5; }
+  .week-num {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: rgba(255,255,255,0.1); display: flex; align-items: center;
+    justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0;
+  }
+  .week-item.active .week-num { background: var(--accent); color: var(--navy); }
+  .week-label { line-height: 1.3; }
+  .week-tag {
+    margin-left: auto; font-size: 9px; padding: 1px 5px; border-radius: 2px;
+    background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); white-space: nowrap;
+  }
+  .sidebar-divider { height: 1px; background: rgba(255,255,255,0.08); margin: 6px 14px; }
+
+  /* ── MAIN AREA ── */
+  #main { flex: 1; overflow-y: auto; padding: 18px 20px; }
+
+  /* ── CONTEXT BANNER ── */
+  .context-banner {
+    background: linear-gradient(135deg, var(--blue) 0%, var(--navy-mid) 100%);
+    border-radius: 8px; padding: 14px 18px; margin-bottom: 16px;
+    color: #fff; display: flex; align-items: center; gap: 14px;
+  }
+  .context-icon { font-size: 24px; }
+  .context-title { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+  .context-desc { font-size: 11px; color: rgba(255,255,255,0.7); }
+  .context-badge {
+    margin-left: auto; background: var(--accent); color: var(--navy);
+    font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  /* ── BUSINESS TYPE TABS ── */
+  .biz-type-bar {
+    display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap;
+  }
+  .biz-btn {
+    padding: 7px 14px; border-radius: 5px; border: 1.5px solid var(--border);
+    background: #fff; cursor: pointer; font-size: 12px; font-weight: 500;
+    color: var(--text-sub); transition: all 0.15s;
+  }
+  .biz-btn:hover { border-color: var(--blue-light); color: var(--blue); }
+  .biz-btn.active {
+    background: var(--blue); border-color: var(--blue);
+    color: #fff; font-weight: 600;
+  }
+  .biz-btn .biz-badge {
+    font-size: 10px; margin-left: 5px; opacity: 0.7;
+  }
+
+  /* ── GRID ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .mb-16 { margin-bottom: 16px; }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--bg-card); border-radius: 7px;
+    border: 1px solid var(--border-light);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    overflow: hidden;
+  }
+  .card-header {
+    background: var(--navy); color: #fff;
+    padding: 8px 14px; display: flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.3px;
+  }
+  .card-header.blue { background: var(--blue); }
+  .card-header.gray { background: #4A5568; }
+  .card-header.green { background: #1A6B4A; }
+  .card-header.warn-bg { background: #92400E; }
+  .card-header .badge {
+    margin-left: auto; font-size: 10px; padding: 2px 7px;
+    background: rgba(255,255,255,0.15); border-radius: 3px;
+  }
+  .card-body { padding: 14px; }
+
+  /* ── FORM FIELDS ── */
+  .field-row {
+    display: grid; grid-template-columns: 160px 1fr 110px;
+    align-items: center; border-bottom: 1px solid var(--border-light);
+    min-height: 34px;
+  }
+  .field-row:last-child { border-bottom: none; }
+  .field-label {
+    padding: 6px 10px; font-size: 12px; color: var(--text-sub);
+    background: #F8FAFC; border-right: 1px solid var(--border-light);
+    font-weight: 500;
+  }
+  .field-label.section-head {
+    background: #EBF0F7; color: var(--navy); font-weight: 700;
+    font-size: 11px; letter-spacing: 0.3px; grid-column: 1/-1;
+    padding: 5px 10px;
+  }
+  .field-input-wrap { padding: 4px 8px; }
+  .field-input {
+    width: 100%; border: 1px solid #C8D3E0; border-radius: 3px;
+    padding: 4px 8px; font-family: var(--mono); font-size: 12px;
+    text-align: right; color: var(--text-main);
+    background: #FAFCFF;
+    transition: border-color 0.15s;
+  }
+  .field-input:focus { outline: none; border-color: var(--blue-light); background: #fff; }
+  .field-input.calc { background: #EBF4FF; color: var(--blue); font-weight: 600; cursor: default; }
+  .field-input.negative { color: var(--danger); }
+  .field-input.warn { border-color: var(--warn); background: #FFFBF0; }
+  .field-unit { padding: 6px 10px; font-size: 11px; color: var(--text-muted); }
+
+  /* ── INFO GRID ── */
+  .info-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+  }
+  .info-cell { border: 1px solid var(--border-light); margin: -1px 0 0 -1px; padding: 0; }
+  .info-cell-label { background: #F8FAFC; padding: 5px 10px; font-size: 11px; color: var(--text-sub); font-weight: 500; border-bottom: 1px solid var(--border-light); }
+  .info-cell-val { padding: 6px 10px; font-size: 12px; font-weight: 500; }
+  .info-cell-val input {
+    width: 100%; border: none; outline: none; font-family: var(--sans);
+    font-size: 12px; background: transparent;
+  }
+
+  /* ── RATIO CARDS ── */
+  .ratio-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .ratio-card {
+    border-radius: 6px; padding: 12px 14px;
+    border: 1px solid var(--border-light);
+    background: #fff;
+  }
+  .ratio-name { font-size: 11px; color: var(--text-sub); margin-bottom: 4px; }
+  .ratio-value { font-family: var(--mono); font-size: 20px; font-weight: 700; }
+  .ratio-formula { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
+  .ratio-good { color: var(--success); }
+  .ratio-bad { color: var(--danger); }
+  .ratio-neutral { color: var(--blue); }
+
+  /* ── CAUTION BOX ── */
+  .caution-list { list-style: none; }
+  .caution-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 8px 12px; border-bottom: 1px solid var(--border-light);
+    transition: background 0.1s;
+  }
+  .caution-item:hover { background: #FAFCFF; }
+  .caution-item label { cursor: pointer; font-size: 12px; color: var(--text-main); }
+  .caution-check { width: 15px; height: 15px; accent-color: var(--blue); flex-shrink: 0; margin-top: 1px; }
+  .caution-item.checked label { color: var(--success); text-decoration: line-through; text-decoration-color: #aaa; }
+  .caution-tag {
+    font-size: 10px; padding: 1px 6px; border-radius: 2px; font-weight: 600;
+    margin-right: 4px;
+  }
+  .tag-ifrs { background: #DBEAFE; color: #1E40AF; }
+  .tag-gaap { background: #D1FAE5; color: #065F46; }
+  .tag-warn { background: #FEF3C7; color: #92400E; }
+  .tag-corp { background: #EDE9FE; color: #4C1D95; }
+  .tag-sole { background: #FCE7F3; color: #831843; }
+
+  /* ── IFRS/GAAP DIFF TABLE ── */
+  .diff-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .diff-table th {
+    background: var(--navy); color: #fff; padding: 7px 10px;
+    text-align: left; font-weight: 600; font-size: 11px;
+  }
+  .diff-table td { padding: 7px 10px; border-bottom: 1px solid var(--border-light); vertical-align: top; }
+  .diff-table tr:nth-child(even) td { background: #F8FAFC; }
+  .diff-table .diff-cell { color: var(--warn); font-weight: 600; }
+
+  /* ── NICE/KED CONVERSION ── */
+  .convert-row {
+    display: grid; grid-template-columns: 1fr 40px 1fr;
+    align-items: center; gap: 8px; padding: 5px 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .convert-left { background: #FEF9EC; border: 1px solid #F0D87A; border-radius: 3px; padding: 5px 8px; font-size: 11px; }
+  .convert-arrow { text-align: center; color: var(--text-muted); font-size: 14px; }
+  .convert-right { background: #EBF0FF; border: 1px solid #93B4E8; border-radius: 3px; padding: 5px 8px; font-size: 11px; }
+  .convert-label { font-size: 10px; color: var(--text-muted); margin-bottom: 1px; }
+  .convert-value { font-family: var(--mono); font-size: 12px; font-weight: 600; }
+  .convert-name { font-size: 12px; color: var(--text-sub); }
+
+  /* ── CAPITAL EROSION ALERT ── */
+  .erosion-alert {
+    background: #FEF2F2; border: 1.5px solid var(--danger);
+    border-radius: 6px; padding: 12px 14px; margin-bottom: 12px;
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .erosion-icon { font-size: 18px; flex-shrink: 0; }
+  .erosion-title { font-weight: 700; color: var(--danger); font-size: 13px; margin-bottom: 3px; }
+  .erosion-desc { font-size: 11px; color: #7F1D1D; }
+
+  /* ── STATUS BAR ── */
+  #statusbar {
+    position: sticky; bottom: 0; background: var(--navy);
+    color: #fff; padding: 6px 20px; display: flex; gap: 20px; align-items: center;
+    font-size: 11px; z-index: 50;
+  }
+  .status-item { display: flex; align-items: center; gap: 6px; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .dot-green { background: #22C55E; }
+  .dot-yellow { background: #F59E0B; }
+  .dot-red { background: #EF4444; }
+  .status-sep { color: rgba(255,255,255,0.2); }
+
+  /* ── SECTION TABS ── */
+  .sec-tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 16px; }
+  .sec-tab {
+    padding: 8px 16px; font-size: 12px; font-weight: 500; cursor: pointer;
+    color: var(--text-sub); border-bottom: 2px solid transparent; margin-bottom: -2px;
+    transition: all 0.15s;
+  }
+  .sec-tab:hover { color: var(--blue); }
+  .sec-tab.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 700; }
+
+  /* ── SUBMIT BUTTON ── */
+  .btn {
+    padding: 8px 18px; border-radius: 4px; font-size: 12px; font-weight: 600;
+    cursor: pointer; border: none; transition: all 0.15s;
+  }
+  .btn-primary { background: var(--blue); color: #fff; }
+  .btn-primary:hover { background: var(--blue-light); }
+  .btn-secondary { background: #fff; color: var(--text-sub); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--blue); color: var(--blue); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-row { display: flex; gap: 8px; justify-content: flex-end; padding: 12px 14px; border-top: 1px solid var(--border-light); }
+
+  /* ── TOOLTIP ── */
+  .tooltip-wrap { position: relative; display: inline-block; }
+  .tooltip-icon { cursor: help; color: var(--text-muted); font-size: 12px; }
+  .tooltip-box {
+    display: none; position: absolute; background: var(--navy); color: #fff;
+    font-size: 11px; padding: 6px 10px; border-radius: 4px; white-space: nowrap;
+    z-index: 200; bottom: 120%; left: 50%; transform: translateX(-50%);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .tooltip-wrap:hover .tooltip-box { display: block; }
+
+  .hidden { display: none !important; }
+
+  /* scroll */
+  #sidebar::-webkit-scrollbar, #main::-webkit-scrollbar { width: 5px; }
+  #sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+  #main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── NOTICE ── */
+  .notice { font-size: 11px; color: var(--text-muted); padding: 6px 10px; background: #F8FAFC; border-left: 3px solid var(--blue-light); border-radius: 0 4px 4px 0; margin-bottom: 10px; }
+
+  .summary-row {
+    background: #EBF4FF; border-top: 2px solid var(--blue);
+  }
+  .summary-row .field-label { background: #D6EAFF; font-weight: 700; color: var(--navy); }
+  .summary-row .field-input { background: #D6EAFF; font-weight: 700; color: var(--navy); border-color: #93C5FD; }
+</style>
+</head>
+<body>
+
+<!-- ── TOP BAR ── -->
+<div id="topbar">
+  <span class="logo-badge">iM</span>
+  <h1>여신심사시스템 — 재무제표 입력 대행업무</h1>
+  <div class="topbar-sub">프로세스혁신부 | 2026-03-30 ~ 2026-06-19</div>
+  <div class="topbar-user">📋 인턴 실습 시뮬레이션</div>
+</div>
+
+<div id="layout">
+
+<!-- ── SIDEBAR ── -->
+<div id="sidebar">
+  <div class="sidebar-section-title">주차별 업무</div>
+
+  <div class="week-item done" onclick="selectWeek(1)">
+    <div class="week-num">1</div>
+    <div class="week-label">오리엔테이션</div>
+    <span class="week-tag">완료</span>
+  </div>
+  <div class="week-item done" onclick="selectWeek(2)" id="wk2">
+    <div class="week-num">2</div>
+    <div class="week-label">계정항목 파악</div>
+    <span class="week-tag">완료</span>
+  </div>
+  <div class="week-item done" onclick="selectWeek(3)" id="wk3">
+    <div class="week-num">3</div>
+    <div class="week-label">IFRS vs GAAP</div>
+    <span class="week-tag">완료</span>
+  </div>
+  <div class="week-item done" onclick="selectWeek(4)" id="wk4">
+    <div class="week-num">4</div>
+    <div class="week-label">유의사항 집중</div>
+    <span class="week-tag">완료</span>
+  </div>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-section-title">입력 실전</div>
+  <div class="week-item active" onclick="selectWeekBiz('외감');" id="wk5">
+    <div class="week-num">5</div>
+    <div class="week-label">외감법인 재무제표</div>
+    <span class="week-tag">진행중</span>
+  </div>
+  <div class="week-item" onclick="selectWeekBiz('법인제조');" id="wk6">
+    <div class="week-num">6</div>
+    <div class="week-label">법인(제조업)</div>
+  </div>
+  <div class="week-item" onclick="selectWeekBiz('법인임대');" id="wk7">
+    <div class="week-num">7</div>
+    <div class="week-label">법인(임대업)</div>
+  </div>
+  <div class="week-item" onclick="selectWeekBiz('외부신용');" id="wk8">
+    <div class="week-num">8</div>
+    <div class="week-label">외부신용평가 변환</div>
+  </div>
+  <div class="week-item" onclick="selectWeekBiz('개인자본잠식');" id="wk9">
+    <div class="week-num">9</div>
+    <div class="week-label">개인(자본잠식)</div>
+  </div>
+  <div class="week-item" onclick="selectWeekBiz('개인자본잠식');" id="wk10">
+    <div class="week-num">10</div>
+    <div class="week-label">개인(자본잠식) 계속</div>
+  </div>
+  <div class="week-item" onclick="selectWeekBiz('개인제조');" id="wk11">
+    <div class="week-num">11</div>
+    <div class="week-label">개인(제조업)</div>
+  </div>
+  <div class="week-item" onclick="selectWeekBiz('개인임대');" id="wk12">
+    <div class="week-num">12</div>
+    <div class="week-label">개인(임대업)</div>
+  </div>
+</div>
+
+<!-- ── MAIN ── -->
+<div id="main">
+
+  <!-- Context Banner -->
+  <div class="context-banner" id="contextBanner">
+    <div class="context-icon">🏦</div>
+    <div>
+      <div class="context-title" id="ctxTitle">5주차 — 외감법인기업 재무제표 입력</div>
+      <div class="context-desc" id="ctxDesc">외부감사를 받는 주식회사의 감사보고서를 기반으로 여신심사 재무제표 DB에 입력합니다.</div>
+    </div>
+    <div class="context-badge" id="ctxBadge">외감법인 · IFRS</div>
+  </div>
+
+  <!-- Business Type Selector -->
+  <div class="biz-type-bar">
+    <button class="biz-btn active" onclick="selectBiz('외감')" id="btn-외감">외감법인 <span class="biz-badge">5주</span></button>
+    <button class="biz-btn" onclick="selectBiz('법인제조')" id="btn-법인제조">법인(제조업) <span class="biz-badge">6주</span></button>
+    <button class="biz-btn" onclick="selectBiz('법인임대')" id="btn-법인임대">법인(임대업) <span class="biz-badge">7주</span></button>
+    <button class="biz-btn" onclick="selectBiz('외부신용')" id="btn-외부신용">외부신용평가 변환 <span class="biz-badge">8주</span></button>
+    <button class="biz-btn" onclick="selectBiz('개인자본잠식')" id="btn-개인자본잠식">개인(자본잠식) <span class="biz-badge">9-10주</span></button>
+    <button class="biz-btn" onclick="selectBiz('개인제조')" id="btn-개인제조">개인(제조업) <span class="biz-badge">11주</span></button>
+    <button class="biz-btn" onclick="selectBiz('개인임대')" id="btn-개인임대">개인(임대업) <span class="biz-badge">12주</span></button>
+  </div>
+
+  <!-- Section Tabs -->
+  <div class="sec-tabs">
+    <div class="sec-tab active" onclick="showSecTab('tab-info', this)">① 기업기본정보</div>
+    <div class="sec-tab" onclick="showSecTab('tab-bs', this)">② 재무상태표</div>
+    <div class="sec-tab" onclick="showSecTab('tab-is', this)">③ 손익계산서</div>
+    <div class="sec-tab" onclick="showSecTab('tab-ratio', this)">④ 재무비율 자동산출</div>
+    <div class="sec-tab" onclick="showSecTab('tab-caution', this)">⑤ 유의사항 체크리스트</div>
+    <div class="sec-tab" onclick="showSecTab('tab-ref', this)">📘 IFRS↔GAAP 비교</div>
+  </div>
+
+  <!-- ===== TAB 1: 기업기본정보 ===== -->
+  <div id="tab-info">
+    <div class="notice" id="bizNotice">외감법인: 직전사업연도 자산총액 500억원 이상 법인은 외부감사 의무 적용(주식회사의 외부감사에 관한 법률). 감사보고서 원본을 반드시 확인하세요.</div>
+    <div class="card mb-16">
+      <div class="card-header">📋 거래처 기본정보</div>
+      <div class="card-body">
+        <div class="info-grid">
+          <div class="info-cell">
+            <div class="info-cell-label">거래처명</div>
+            <div class="info-cell-val"><input type="text" value="(주)한국정밀기계" id="compName"></div>
+          </div>
+          <div class="info-cell">
+            <div class="info-cell-label">사업자등록번호</div>
+            <div class="info-cell-val"><input type="text" value="123-45-67890" id="bizNum"></div>
+          </div>
+          <div class="info-cell">
+            <div class="info-cell-label">법인등록번호</div>
+            <div class="info-cell-val"><input type="text" value="110111-0234567" id="corpNum"></div>
+          </div>
+          <div class="info-cell">
+            <div class="info-cell-label">대표자명</div>
+            <div class="info-cell-val"><input type="text" value="김영철" id="ceoName"></div>
+          </div>
+          <div class="info-cell">
+            <div class="info-cell-label">업종분류</div>
+            <div class="info-cell-val">
+              <select style="border:none;outline:none;width:100%;font-size:12px;background:transparent;" id="bizType">
+                <option value="제조업">제조업 (C29)</option>
+                <option value="임대업">부동산임대업 (L)</option>
+                <option value="도소매">도소매업 (G)</option>
+                <option value="서비스">서비스업 (N)</option>
+              </select>
+            </div>
+          </div>
+          <div class="info-cell">
+            <div class="info-cell-label">기업형태</div>
+            <div class="info-cell-val">
+              <select style="border:none;outline:none;width:100%;font-size:12px;background:transparent;" id="corpType">
+                <option value="외감">외감법인 (주식회사)</option>
+                <option value="비외감법인">비외감법인</option>
+                <option value="개인">개인사업자</option>
+              </select>
+            </div>
+          </div>
+          <div class="info-cell">
+            <div class="info-cell-label">결산월</div>
+            <div class="info-cell-val">
+              <select style="border:none;outline:none;width:100%;font-size:12px;background:transparent;">
+                <option>12월(일반결산)</option>
+                <option>3월</option>
+                <option>6월</option>
+                <option>9월</option>
+              </select>
+            </div>
+          </div>
+          <div class="info-cell">
+            <div class="info-cell-label">회계기준</div>
+            <div class="info-cell-val">
+              <select style="border:none;outline:none;width:100%;font-size:12px;background:transparent;" id="acctStd" onchange="toggleAcctStd()">
+                <option value="IFRS">K-IFRS (한국채택국제회계기준)</option>
+                <option value="GAAP">K-GAAP (일반기업회계기준)</option>
+              </select>
+            </div>
+          </div>
+          <div class="info-cell">
+            <div class="info-cell-label">재무제표 기준일</div>
+            <div class="info-cell-val"><input type="text" value="2024.12.31" id="fsDate"></div>
+          </div>
+          <div class="info-cell">
+            <div class="info-cell-label">감사의견</div>
+            <div class="info-cell-val">
+              <select style="border:none;outline:none;width:100%;font-size:12px;background:transparent;" id="auditOpinion" onchange="checkAudit()">
+                <option value="적정">적정(Unqualified)</option>
+                <option value="한정">한정(Qualified)</option>
+                <option value="부적정">부적정(Adverse)</option>
+                <option value="의견거절">의견거절(Disclaimer)</option>
+              </select>
+            </div>
+          </div>
+          <div class="info-cell">
+            <div class="info-cell-label">여신종류</div>
+            <div class="info-cell-val">
+              <select style="border:none;outline:none;width:100%;font-size:12px;background:transparent;">
+                <option>일반대출</option>
+                <option>운전자금대출</option>
+                <option>시설자금대출</option>
+                <option>신용보증부대출</option>
+              </select>
+            </div>
+          </div>
+          <div class="info-cell">
+            <div class="info-cell-label">여신신청금액</div>
+            <div class="info-cell-val"><input type="text" value="500,000" id="loanAmt" style="font-family:var(--mono)"> <span style="font-size:11px;color:var(--text-muted)">천원</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="auditWarn" class="erosion-alert hidden">
+      <div class="erosion-icon">⚠️</div>
+      <div>
+        <div class="erosion-title">비적정 감사의견 — 담당자 확인 필수</div>
+        <div class="erosion-desc">한정/부적정/의견거절 의견의 경우 재무자료의 신뢰성이 낮을 수 있습니다. 여신심사부 담당자 및 멘토에게 즉시 보고하고 별도 지시를 받으세요.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 2: 재무상태표 ===== -->
+  <div id="tab-bs" class="hidden">
+    <div class="notice">단위: 천원 / 소수점 이하는 반올림하여 입력. 전년도와 당기 모두 입력 (비교재무제표). 입력 후 합계가 자동 계산됩니다.</div>
+    <div class="grid-2 mb-16">
+
+      <!-- 자산 -->
+      <div class="card">
+        <div class="card-header blue">자산 (Assets)
+          <span class="badge" id="totalAssets-badge">합계: 자동계산</span>
+        </div>
+        <div class="card-body" style="padding:0;">
+          <div class="field-row"><div class="field-label section-head">▶ 유동자산 (Current Assets)</div></div>
+          <div class="field-row">
+            <div class="field-label">현금및현금성자산</div>
+            <div class="field-input-wrap"><input class="field-input bs-curr-asset" type="text" value="1,230,000" data-key="cash" oninput="calcBS()"></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row">
+            <div class="field-label">단기금융상품</div>
+            <div class="field-input-wrap"><input class="field-input bs-curr-asset" type="text" value="500,000" data-key="shortFin" oninput="calcBS()"></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row">
+            <div class="field-label">매출채권</div>
+            <div class="field-input-wrap"><input class="field-input bs-curr-asset" type="text" value="2,150,000" data-key="ar" oninput="calcBS()"></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row">
+            <div class="field-label">대손충당금(△)</div>
+            <div class="field-input-wrap"><input class="field-input bs-curr-asset" type="text" value="-85,000" data-key="allowance" oninput="calcBS()"></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row">
+            <div class="field-label">재고자산</div>
+            <div class="field-input-wrap"><input class="field-input bs-curr-asset" type="text" value="1,800,000" data-key="inventory" oninput="calcBS()"></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row">
+            <div class="field-label">기타유동자산</div>
+            <div class="field-input-wrap"><input class="field-input bs-curr-asset" type="text" value="320,000" data-key="otherCurr" oninput="calcBS()"></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row summary-row">
+            <div class="field-label">유동자산 합계</div>
+            <div class="field-input-wrap"><input class="field-input calc" type="text" id="totalCurrAsset" readonly></div>
+            <div class="field-unit">천원</div>
+          </div>
+
+          <div class="field-row"><div class="field-label section-head">▶ 비유동자산 (Non-Current Assets)</div></div>
+          <div class="field-row">
+            <div class="field-label">유형자산</div>
+            <div class="field-input-wrap"><input class="field-input bs-noncurr-asset" type="text" value="4,500,000" data-key="ppe" oninput="calcBS()"></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row">
+            <div class="field-label">감가상각누계액(△)</div>
+            <div class="field-input-wrap"><input class="field-input bs-noncurr-asset" type="text" value="-1,200,000" data-key="accDep" oninput="calcBS()"></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row">
+            <div class="field-label">무형자산</div>
+            <div class="field-input-wrap"><input class="field-input bs-noncurr-asset" type="text" value="250,000" data-key="intangible" oninput="calcBS()"></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row">
+            <div class="field-label">장기금융상품</div>
+            <div class="field-input-wrap"><input class="field-input bs-noncurr-asset" type="text" value="200,000" data-key="longFin" oninput="calcBS()"></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row">
+            <div class="field-label">투자자산</div>
+            <div class="field-input-wrap"><input class="field-input bs-noncurr-asset" type="text" value="380,000" data-key="invest" oninput="calcBS()"></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row">
+            <div class="field-label">기타비유동자산</div>
+            <div class="field-input-wrap"><input class="field-input bs-noncurr-asset" type="text" value="120,000" data-key="otherNonCurr" oninput="calcBS()"></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row summary-row">
+            <div class="field-label">비유동자산 합계</div>
+            <div class="field-input-wrap"><input class="field-input calc" type="text" id="totalNonCurrAsset" readonly></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row" style="background:#DBEAFE;">
+            <div class="field-label" style="background:#BFDBFE;font-weight:700;color:#1E3A8A;">자산 총계</div>
+            <div class="field-input-wrap"><input class="field-input calc" type="text" id="totalAsset" style="background:#BFDBFE;font-weight:800;font-size:13px;color:#1E3A8A;" readonly></div>
+            <div class="field-unit">천원</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 부채·자본 -->
+      <div>
+        <div class="card mb-16">
+          <div class="card-header" style="background:#5B21B6;">부채 (Liabilities)
+            <span class="badge" id="totalLiab-badge">합계: 자동계산</span>
+          </div>
+          <div class="card-body" style="padding:0;">
+            <div class="field-row"><div class="field-label section-head">▶ 유동부채 (Current Liabilities)</div></div>
+            <div class="field-row">
+              <div class="field-label">단기차입금</div>
+              <div class="field-input-wrap"><input class="field-input bs-curr-liab" type="text" value="1,500,000" oninput="calcBS()"></div>
+              <div class="field-unit">천원</div>
+            </div>
+            <div class="field-row">
+              <div class="field-label">유동성장기부채</div>
+              <div class="field-input-wrap"><input class="field-input bs-curr-liab" type="text" value="300,000" oninput="calcBS()"></div>
+              <div class="field-unit">천원</div>
+            </div>
+            <div class="field-row">
+              <div class="field-label">매입채무</div>
+              <div class="field-input-wrap"><input class="field-input bs-curr-liab" type="text" value="890,000" oninput="calcBS()"></div>
+              <div class="field-unit">천원</div>
+            </div>
+            <div class="field-row">
+              <div class="field-label">기타유동부채</div>
+              <div class="field-input-wrap"><input class="field-input bs-curr-liab" type="text" value="410,000" oninput="calcBS()"></div>
+              <div class="field-unit">천원</div>
+            </div>
+            <div class="field-row summary-row">
+              <div class="field-label">유동부채 합계</div>
+              <div class="field-input-wrap"><input class="field-input calc" type="text" id="totalCurrLiab" readonly></div>
+              <div class="field-unit">천원</div>
+            </div>
+            <div class="field-row"><div class="field-label section-head">▶ 비유동부채</div></div>
+            <div class="field-row">
+              <div class="field-label">장기차입금</div>
+              <div class="field-input-wrap"><input class="field-input bs-noncurr-liab" type="text" value="2,000,000" oninput="calcBS()"></div>
+              <div class="field-unit">천원</div>
+            </div>
+            <div class="field-row">
+              <div class="field-label">사 채</div>
+              <div class="field-input-wrap"><input class="field-input bs-noncurr-liab" type="text" value="500,000" oninput="calcBS()"></div>
+              <div class="field-unit">천원</div>
+            </div>
+            <div class="field-row">
+              <div class="field-label">기타비유동부채</div>
+              <div class="field-input-wrap"><input class="field-input bs-noncurr-liab" type="text" value="150,000" oninput="calcBS()"></div>
+              <div class="field-unit">천원</div>
+            </div>
+            <div class="field-row summary-row">
+              <div class="field-label">비유동부채 합계</div>
+              <div class="field-input-wrap"><input class="field-input calc" type="text" id="totalNonCurrLiab" readonly></div>
+              <div class="field-unit">천원</div>
+            </div>
+            <div class="field-row" style="background:#EDE9FE;">
+              <div class="field-label" style="background:#DDD6FE;font-weight:700;color:#4C1D95;">부채 총계</div>
+              <div class="field-input-wrap"><input class="field-input calc" type="text" id="totalLiab" style="background:#DDD6FE;font-weight:800;font-size:13px;color:#4C1D95;" readonly></div>
+              <div class="field-unit">천원</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header green">자본 (Equity)
+            <span class="badge" id="totalEquity-badge">합계: 자동계산</span>
+          </div>
+          <div class="card-body" style="padding:0;">
+            <div class="field-row">
+              <div class="field-label">자본금</div>
+              <div class="field-input-wrap"><input class="field-input bs-equity" type="text" value="1,000,000" oninput="calcBS()"></div>
+              <div class="field-unit">천원</div>
+            </div>
+            <div class="field-row">
+              <div class="field-label">자본잉여금</div>
+              <div class="field-input-wrap"><input class="field-input bs-equity" type="text" value="500,000" oninput="calcBS()"></div>
+              <div class="field-unit">천원</div>
+            </div>
+            <div class="field-row">
+              <div class="field-label">이익잉여금(결손금)</div>
+              <div class="field-input-wrap"><input class="field-input bs-equity" type="text" value="1,215,000" id="retainedEarnings" oninput="calcBS(); checkErosion()"></div>
+              <div class="field-unit">천원</div>
+            </div>
+            <div class="field-row">
+              <div class="field-label">기타자본구성요소</div>
+              <div class="field-input-wrap"><input class="field-input bs-equity" type="text" value="100,000" oninput="calcBS()"></div>
+              <div class="field-unit">천원</div>
+            </div>
+            <div id="erosionAlertSmall" class="hidden" style="padding:6px 10px;background:#FEF2F2;border-left:3px solid #C0392B;margin:4px;border-radius:3px;font-size:11px;color:#7F1D1D;">
+              ⚠️ <strong>자본잠식 감지!</strong> 이익잉여금이 음수(결손금)입니다. 자본잠식률을 산출하고 멘토 보고 필요.
+            </div>
+            <div class="field-row" style="background:#D1FAE5;">
+              <div class="field-label" style="background:#A7F3D0;font-weight:700;color:#065F46;">자본 총계</div>
+              <div class="field-input-wrap"><input class="field-input calc" type="text" id="totalEquity" style="background:#A7F3D0;font-weight:800;font-size:13px;color:#065F46;" readonly></div>
+              <div class="field-unit">천원</div>
+            </div>
+            <div class="field-row" style="background:#F0FDF4;">
+              <div class="field-label" style="font-size:11px;color:#6B7280;">자산 = 부채 + 자본 검증</div>
+              <div class="field-input-wrap"><input class="field-input calc" type="text" id="bsCheck" readonly style="font-size:11px;"></div>
+              <div class="field-unit"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 3: 손익계산서 ===== -->
+  <div id="tab-is" class="hidden">
+    <div class="notice">단위: 천원 / 매출액부터 순서대로 입력하면 하위 항목이 자동 계산됩니다.</div>
+    <div class="grid-2 mb-16">
+      <div class="card">
+        <div class="card-header blue">손익계산서 (Income Statement) <span class="badge">당기: 2024.01.01~12.31</span></div>
+        <div class="card-body" style="padding:0;">
+          <div class="field-row"><div class="field-label section-head">▶ 매출 및 매출원가</div></div>
+          <div class="field-row">
+            <div class="field-label">매 출 액</div>
+            <div class="field-input-wrap"><input class="field-input is-input" type="text" value="8,500,000" id="revenue" oninput="calcIS()"></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row">
+            <div class="field-label">매 출 원 가</div>
+            <div class="field-input-wrap"><input class="field-input is-input" type="text" value="6,200,000" id="cogs" oninput="calcIS()"></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row summary-row">
+            <div class="field-label">매출총이익</div>
+            <div class="field-input-wrap"><input class="field-input calc" type="text" id="grossProfit" readonly></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row"><div class="field-label section-head">▶ 판매비와 관리비</div></div>
+          <div class="field-row">
+            <div class="field-label">인건비(급여)</div>
+            <div class="field-input-wrap"><input class="field-input is-sga" type="text" value="450,000" oninput="calcIS()"></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row">
+            <div class="field-label">감가상각비</div>
+            <div class="field-input-wrap"><input class="field-input is-sga" type="text" value="180,000" oninput="calcIS()"></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row">
+            <div class="field-label">기타판관비</div>
+            <div class="field-input-wrap"><input class="field-input is-sga" type="text" value="320,000" oninput="calcIS()"></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row summary-row">
+            <div class="field-label">판매비와관리비 합계</div>
+            <div class="field-input-wrap"><input class="field-input calc" type="text" id="totalSGA" readonly></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row" style="background:#FFF7E0;">
+            <div class="field-label" style="background:#FEF0B0;font-weight:700;color:#78350F;">영 업 이 익</div>
+            <div class="field-input-wrap"><input class="field-input calc" type="text" id="operatingIncome" style="background:#FEF0B0;font-weight:800;font-size:13px;color:#78350F;" readonly></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row"><div class="field-label section-head">▶ 영업외손익</div></div>
+          <div class="field-row">
+            <div class="field-label">이자수익</div>
+            <div class="field-input-wrap"><input class="field-input is-nonop" type="text" value="25,000" oninput="calcIS()"></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row">
+            <div class="field-label">이자비용</div>
+            <div class="field-input-wrap"><input class="field-input is-nonop" type="text" value="-180,000" oninput="calcIS()"></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row">
+            <div class="field-label">기타영업외손익</div>
+            <div class="field-input-wrap"><input class="field-input is-nonop" type="text" value="15,000" oninput="calcIS()"></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row summary-row">
+            <div class="field-label">법인세전순이익</div>
+            <div class="field-input-wrap"><input class="field-input calc" type="text" id="ebt" readonly></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row">
+            <div class="field-label">법인세비용</div>
+            <div class="field-input-wrap"><input class="field-input is-input" type="text" value="-90,000" id="taxExp" oninput="calcIS()"></div>
+            <div class="field-unit">천원</div>
+          </div>
+          <div class="field-row" style="background:#ECFDF5;">
+            <div class="field-label" style="background:#D1FAE5;font-weight:700;color:#065F46;">당 기 순 이 익</div>
+            <div class="field-input-wrap"><input class="field-input calc" type="text" id="netIncome" style="background:#D1FAE5;font-weight:800;font-size:13px;color:#065F46;" readonly></div>
+            <div class="field-unit">천원</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EBITDA & notes -->
+      <div>
+        <div class="card mb-16">
+          <div class="card-header gray">주요 재무지표 (자동 계산)</div>
+          <div class="card-body" style="padding:0;">
+            <div class="field-row">
+              <div class="field-label">EBITDA</div>
+              <div class="field-input-wrap"><input class="field-input calc" type="text" id="ebitda" readonly></div>
+              <div class="field-unit">천원</div>
+            </div>
+            <div class="field-row">
+              <div class="field-label">이자보상배율</div>
+              <div class="field-input-wrap"><input class="field-input calc" type="text" id="icr" readonly></div>
+              <div class="field-unit">배</div>
+            </div>
+            <div class="field-row">
+              <div class="field-label">영업이익률</div>
+              <div class="field-input-wrap"><input class="field-input calc" type="text" id="opMargin" readonly></div>
+              <div class="field-unit">%</div>
+            </div>
+            <div class="field-row">
+              <div class="field-label">순이익률</div>
+              <div class="field-input-wrap"><input class="field-input calc" type="text" id="netMargin" readonly></div>
+              <div class="field-unit">%</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header warn-bg">⚠️ 손익계산서 입력 유의사항</div>
+          <div class="card-body" style="padding:10px 14px;">
+            <p style="font-size:12px;color:var(--text-sub);line-height:1.8;">
+              • <strong>IFRS:</strong> 기능별 분류(매출원가/판관비) vs. 성격별 분류 — 감사보고서 주석 확인<br>
+              • <strong>비경상항목:</strong> 자산처분손익 등은 영업외로 분류<br>
+              • <strong>임대업:</strong> 임대수입이 매출액, 임대원가(감가상각 등)가 매출원가<br>
+              • <strong>개인사업자:</strong> 대표자 인건비는 통상 비용으로 미계상 → 조정 필요 여부 확인<br>
+              • 단위 확인 필수: 원(₩) → 천원 변환 시 끝 3자리 제거
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 4: 재무비율 ===== -->
+  <div id="tab-ratio" class="hidden">
+    <div class="notice">하단의 재무비율은 재무상태표와 손익계산서 입력값 기반으로 자동 산출됩니다. 신용평가 판단 참고용이며, 최종 평가는 여신심사부에서 진행합니다.</div>
+    <div class="ratio-grid mb-16">
+      <div class="ratio-card">
+        <div class="ratio-name">📊 유동비율 (Liquidity Ratio)</div>
+        <div class="ratio-value ratio-neutral" id="r-liquidity">—</div>
+        <div class="ratio-formula">유동자산 ÷ 유동부채 × 100<br><small>기준: ≥ 100% 양호</small></div>
+      </div>
+      <div class="ratio-card">
+        <div class="ratio-name">📊 부채비율 (Debt Ratio)</div>
+        <div class="ratio-value ratio-neutral" id="r-debt">—</div>
+        <div class="ratio-formula">부채총계 ÷ 자본총계 × 100<br><small>기준: ≤ 200% 권장</small></div>
+      </div>
+      <div class="ratio-card">
+        <div class="ratio-name">📊 자기자본비율</div>
+        <div class="ratio-value ratio-neutral" id="r-equity">—</div>
+        <div class="ratio-formula">자본총계 ÷ 자산총계 × 100<br><small>기준: ≥ 30% 권장</small></div>
+      </div>
+      <div class="ratio-card">
+        <div class="ratio-name">💰 영업이익률</div>
+        <div class="ratio-value ratio-neutral" id="r-opmargin">—</div>
+        <div class="ratio-formula">영업이익 ÷ 매출액 × 100</div>
+      </div>
+      <div class="ratio-card">
+        <div class="ratio-name">💰 순이익률 (Net Margin)</div>
+        <div class="ratio-value ratio-neutral" id="r-netmargin">—</div>
+        <div class="ratio-formula">당기순이익 ÷ 매출액 × 100</div>
+      </div>
+      <div class="ratio-card">
+        <div class="ratio-name">🔄 ROE (자기자본이익률)</div>
+        <div class="ratio-value ratio-neutral" id="r-roe">—</div>
+        <div class="ratio-formula">당기순이익 ÷ 자본총계 × 100</div>
+      </div>
+      <div class="ratio-card">
+        <div class="ratio-name">🏭 총자산회전율</div>
+        <div class="ratio-value ratio-neutral" id="r-ato">—</div>
+        <div class="ratio-formula">매출액 ÷ 자산총계 (회)</div>
+      </div>
+      <div class="ratio-card">
+        <div class="ratio-name">🛡️ 이자보상배율</div>
+        <div class="ratio-value ratio-neutral" id="r-icr2">—</div>
+        <div class="ratio-formula">영업이익 ÷ 이자비용 (배)<br><small>기준: ≥ 1.5배 권장</small></div>
+      </div>
+      <div class="ratio-card">
+        <div class="ratio-name">⚠️ 자본잠식률</div>
+        <div class="ratio-value ratio-neutral" id="r-erosion">—</div>
+        <div class="ratio-formula">결손금 ÷ 자본금 × 100<br><small>50% 이상: 부분잠식 주의</small></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">🎯 종합 신용평가 의견 (자동생성 — 참고용)</div>
+      <div class="card-body">
+        <div id="creditOpinion" style="font-size:12px;line-height:2;color:var(--text-main);">
+          재무상태표와 손익계산서를 입력하면 종합의견이 생성됩니다.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 5: 유의사항 체크리스트 ===== -->
+  <div id="tab-caution" class="hidden">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">✅ 입력 전 체크리스트</div>
+        <ul class="caution-list" id="preCaution">
+          <li class="caution-item"><input type="checkbox" class="caution-check" onchange="toggleCaution(this)"> <label><span class="caution-tag tag-warn">필수</span> 감사보고서 원본(PDF) 또는 DART 공시 원문을 사전에 확인했는가?</label></li>
+          <li class="caution-item"><input type="checkbox" class="caution-check" onchange="toggleCaution(this)"> <label><span class="caution-tag tag-ifrs">IFRS</span> 연결재무제표 vs 별도재무제표 구분을 확인했는가? (일반적으로 별도 기준 입력)</label></li>
+          <li class="caution-item"><input type="checkbox" class="caution-check" onchange="toggleCaution(this)"> <label><span class="caution-tag tag-warn">필수</span> 재무제표 단위(원/천원/백만원)를 확인하고 천원 단위로 변환 준비를 했는가?</label></li>
+          <li class="caution-item"><input type="checkbox" class="caution-check" onchange="toggleCaution(this)"> <label><span class="caution-tag tag-warn">필수</span> 거래처 사업자등록번호와 감사보고서 법인정보가 일치하는가?</label></li>
+          <li class="caution-item"><input type="checkbox" class="caution-check" onchange="toggleCaution(this)"> <label><span class="caution-tag tag-warn">필수</span> 감사의견이 '적정'인지 확인했는가? 비적정이면 멘토 보고 후 진행</label></li>
+          <li class="caution-item"><input type="checkbox" class="caution-check" onchange="toggleCaution(this)"> <label>전기(비교) 재무제표와 당기 수치가 모두 확보되었는가?</label></li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header blue">✅ 입력 중 체크리스트</div>
+        <ul class="caution-list">
+          <li class="caution-item"><input type="checkbox" class="caution-check" onchange="toggleCaution(this)"> <label><span class="caution-tag tag-ifrs">IFRS</span> 금융자산을 FVTPL / FVOCI / 상각원가로 올바르게 분류했는가?</label></li>
+          <li class="caution-item"><input type="checkbox" class="caution-check" onchange="toggleCaution(this)"> <label><span class="caution-tag tag-gaap">GAAP</span> 단기투자자산과 장기투자자산 구분이 올바른가? (만기 1년 기준)</label></li>
+          <li class="caution-item"><input type="checkbox" class="caution-check" onchange="toggleCaution(this)"> <label><span class="caution-tag tag-corp">법인</span> 대손충당금은 매출채권에서 차감하는 형식(△)으로 입력했는가?</label></li>
+          <li class="caution-item"><input type="checkbox" class="caution-check" onchange="toggleCaution(this)"> <label><span class="caution-tag tag-corp">법인</span> 유동성장기부채(1년 내 만기도래)는 유동부채로 재분류했는가?</label></li>
+          <li class="caution-item"><input type="checkbox" class="caution-check" onchange="toggleCaution(this)"> <label><span class="caution-tag tag-warn">유의</span> 자산총계 = 부채총계 + 자본총계 대차 균형이 맞는가?</label></li>
+          <li class="caution-item"><input type="checkbox" class="caution-check" onchange="toggleCaution(this)"> <label><span class="caution-tag tag-sole">개인</span> 개인사업자의 경우 대표자 가지급금/가수금 처리를 확인했는가?</label></li>
+          <li class="caution-item"><input type="checkbox" class="caution-check" onchange="toggleCaution(this)"> <label><span class="caution-tag tag-sole">개인</span> 개인사업자 이익잉여금 → 자본금으로 대체 여부 확인 (법인과 구조 다름)</label></li>
+          <li class="caution-item"><input type="checkbox" class="caution-check" onchange="toggleCaution(this)"> <label><span class="caution-tag tag-warn">유의</span> 자본잠식(이익잉여금 음수) 발생 시 수정재무제표 입력 절차 확인</label></li>
+        </ul>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px;">
+      <div class="card-header warn-bg">📌 업종별 특수 유의사항</div>
+      <div class="card-body">
+        <table class="diff-table">
+          <tr><th>업종</th><th>재무상태표 특이사항</th><th>손익계산서 특이사항</th></tr>
+          <tr><td><strong>제조업</strong></td><td>재고자산(원재료/재공품/제품) 세부 구분 확인. 재고자산 평가손실 여부</td><td>제조원가명세서 존재. 매출원가 = 제조원가 + 기초재고 - 기말재고</td></tr>
+          <tr><td><strong>임대업</strong></td><td class="diff-cell">임대보증금(부채)이 대규모일 수 있음. 투자부동산 분류 주의 (IFRS 특이)</td><td>임대수입 = 매출액. 감가상각비가 핵심 원가</td></tr>
+          <tr><td><strong>개인(제조)</strong></td><td class="diff-cell">법인 전환 전이면 자본구조 단순 (출자금 + 잉여금). 가지급금 주의</td><td>대표자 인건비 미계상 多 → 적정 수준 가산 검토</td></tr>
+          <tr><td><strong>자본잠식</strong></td><td class="diff-cell">결손금으로 인해 자본총계 < 자본금이면 부분잠식. 자본총계 < 0이면 완전잠식 → 특수처리</td><td>연속 적자여부, 영업이익은 흑자인지 확인 (영업 외 요인인지)</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 6: IFRS ↔ GAAP ===== -->
+  <div id="tab-ref" class="hidden">
+    <div class="notice">2주차~3주차 학습 내용 참고 자료. 외감법인 재무제표 입력 시 회계기준 선택이 중요합니다.</div>
+    <div class="card mb-16">
+      <div class="card-header">📚 K-IFRS vs K-GAAP 주요 차이점</div>
+      <div class="card-body" style="padding:0;">
+        <table class="diff-table">
+          <tr>
+            <th style="width:20%">구 분</th>
+            <th style="width:40%;background:#1E3A8A;">K-IFRS (국제회계기준)</th>
+            <th style="width:40%;background:#065F46;">K-GAAP (일반기업회계기준)</th>
+          </tr>
+          <tr>
+            <td><strong>적용대상</strong></td>
+            <td>상장법인, 금융기관 <strong>의무</strong><br><small>비상장 외감법인: 선택 가능</small></td>
+            <td>비상장 비외감 법인, 중소기업<br><small>상장법인은 적용 불가</small></td>
+          </tr>
+          <tr>
+            <td><strong>재무제표 구성</strong></td>
+            <td class="diff-cell">재무상태표, 포괄손익계산서,<br>자본변동표, 현금흐름표, 주석 (5가지)</td>
+            <td>재무상태표, 손익계산서,<br>자본변동표, 현금흐름표, 주석</td>
+          </tr>
+          <tr>
+            <td><strong>손익계산서</strong></td>
+            <td class="diff-cell">당기순이익 + <strong>기타포괄손익 = 총포괄이익</strong><br>기타포괄손익 별도 표시</td>
+            <td>당기순이익만 표시<br>기타포괄손익 개념 없음</td>
+          </tr>
+          <tr>
+            <td><strong>금융자산 분류</strong></td>
+            <td class="diff-cell">FVTPL / FVOCI / 상각원가<br>(3가지 범주)</td>
+            <td>단기투자자산 / 장기투자자산<br>(만기·보유목적 기준)</td>
+          </tr>
+          <tr>
+            <td><strong>재고자산 평가</strong></td>
+            <td class="diff-cell">후입선출법(LIFO) <strong>금지</strong><br>선입선출, 평균법, 개별법만 허용</td>
+            <td>후입선출법도 허용</td>
+          </tr>
+          <tr>
+            <td><strong>투자부동산</strong></td>
+            <td class="diff-cell"><strong>공정가치 모형</strong> 또는 원가 모형 선택<br>(공정가치 변동 → 당기손익)</td>
+            <td>원가모형만 적용<br>(공정가치 측정 없음)</td>
+          </tr>
+          <tr>
+            <td><strong>연결 vs 별도</strong></td>
+            <td class="diff-cell">지배기업은 <strong>연결재무제표가 주재무제표</strong><br>별도재무제표는 부속</td>
+            <td>별도재무제표가 주재무제표<br>연결은 부속</td>
+          </tr>
+          <tr>
+            <td><strong>은행 입력 기준</strong></td>
+            <td colspan="2" style="background:#FEF9EC;text-align:center;font-weight:600;color:#78350F;">
+              ⭐ 아이엠뱅크 내부 입력 기준: <strong>별도재무제표 기준</strong>으로 입력 (연결재무제표와 차이 있을 수 있음)<br>
+              감사보고서 목차에서 "별도재무제표" 섹션 확인 후 입력
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- NICE/KED 변환 섹션 -->
+    <div class="card" id="nicekedPanel">
+      <div class="card-header" style="background:#B45309;">🔄 8주차 — 외부신용평가 재무자료 변환 (NICE/KED → 은행 시스템)</div>
+      <div class="card-body">
+        <div class="notice" style="margin-bottom:14px;">
+          <strong>외부신용평가 변환이란?</strong> NICE신용평가정보(나이스), KED(한국기업데이터) 등 신용조회회사가 제공하는 기업 재무자료는 자체 분류 체계를 사용합니다. 이를 아이엠뱅크 여신심사 시스템의 계정 체계로 <strong>"매핑(변환)"</strong>하는 것이 이 업무의 핵심입니다.
+        </div>
+        <div style="display:grid;grid-template-columns:40px 1fr 20px 1fr;align-items:center;gap:0;margin-bottom:10px;font-size:11px;font-weight:700;color:var(--text-muted);padding:0 0 6px;">
+          <div></div><div style="text-align:center;padding:4px;background:#FEF9EC;border:1px solid #F0D87A;border-radius:3px;">📄 NICE/KED 제공 계정명</div>
+          <div></div>
+          <div style="text-align:center;padding:4px;background:#EBF0FF;border:1px solid #93B4E8;border-radius:3px;">🏦 은행 시스템 입력 계정명</div>
+        </div>
+        <div id="convertRows">
+          <!-- rows injected by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Bar -->
+  <div id="statusbar">
+    <div class="status-item"><div class="status-dot dot-green"></div> 시스템 정상</div>
+    <div class="status-sep">|</div>
+    <div class="status-item">거래처: <strong id="sb-comp">(주)한국정밀기계</strong></div>
+    <div class="status-sep">|</div>
+    <div class="status-item">회계기준: <strong id="sb-std">K-IFRS</strong></div>
+    <div class="status-sep">|</div>
+    <div class="status-item">자산총계: <strong id="sb-asset">—</strong></div>
+    <div class="status-sep">|</div>
+    <div class="status-item">대차균형: <strong id="sb-check">—</strong></div>
+    <div class="status-sep">|</div>
+    <div class="status-item" style="margin-left:auto;color:rgba(255,255,255,0.5);">인턴 실습 시뮬레이션 · 프로세스혁신부</div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /layout -->
+
+<script>
+// ── 숫자 파싱/포맷 유틸 ──
+function parseNum(str) {
+  if (!str) return 0;
+  return parseFloat(str.toString().replace(/,/g, '')) || 0;
+}
+function fmt(n) {
+  if (isNaN(n)) return '—';
+  return Math.round(n).toLocaleString('ko-KR');
+}
+function fmtPct(n) {
+  if (isNaN(n) || !isFinite(n)) return '—';
+  return n.toFixed(1) + '%';
+}
+function fmtX(n) {
+  if (isNaN(n) || !isFinite(n)) return '—';
+  return n.toFixed(2) + 'x';
+}
+
+// ── 재무상태표 계산 ──
+function calcBS() {
+  const sumClass = (cls) => Array.from(document.querySelectorAll('.' + cls))
+    .reduce((s, el) => s + parseNum(el.value), 0);
+
+  const currA = sumClass('bs-curr-asset');
+  const nonCurrA = sumClass('bs-noncurr-asset');
+  const totalA = currA + nonCurrA;
+  const currL = sumClass('bs-curr-liab');
+  const nonCurrL = sumClass('bs-noncurr-liab');
+  const totalL = currL + nonCurrL;
+  const equity = sumClass('bs-equity');
+
+  setValue('totalCurrAsset', fmt(currA));
+  setValue('totalNonCurrAsset', fmt(nonCurrA));
+  setValue('totalAsset', fmt(totalA));
+  setValue('totalCurrLiab', fmt(currL));
+  setValue('totalNonCurrLiab', fmt(nonCurrL));
+  setValue('totalLiab', fmt(totalL));
+  setValue('totalEquity', fmt(equity));
+
+  const diff = totalA - (totalL + equity);
+  const bsEl = document.getElementById('bsCheck');
+  if (Math.abs(diff) < 1) {
+    bsEl.value = '✅ 대차 균형 (0)';
+    bsEl.style.color = '#1E8C5A';
+    document.getElementById('sb-check').textContent = '✅ 균형';
+    document.getElementById('sb-check').style.color = '#22C55E';
+  } else {
+    bsEl.value = '❌ 불일치: ' + fmt(diff) + '천원';
+    bsEl.style.color = '#C0392B';
+    document.getElementById('sb-check').textContent = '❌ 불일치';
+    document.getElementById('sb-check').style.color = '#EF4444';
+  }
+
+  document.getElementById('sb-asset').textContent = fmt(totalA) + '천원';
+
+  // store for ratios
+  window._bs = { currA, nonCurrA, totalA, currL, nonCurrL, totalL, equity };
+  calcRatios();
+}
+
+function setValue(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.value = val;
+}
+
+// ── 손익계산서 계산 ──
+function calcIS() {
+  const rev = parseNum(document.getElementById('revenue').value);
+  const cogs = parseNum(document.getElementById('cogs').value);
+  const grossP = rev - cogs;
+
+  const sga = Array.from(document.querySelectorAll('.is-sga'))
+    .reduce((s, el) => s + parseNum(el.value), 0);
+  const totalSGA = sga;
+  const opInc = grossP - totalSGA;
+
+  const nonOp = Array.from(document.querySelectorAll('.is-nonop'))
+    .reduce((s, el) => s + parseNum(el.value), 0);
+  const ebt = opInc + nonOp;
+  const taxExp = parseNum(document.getElementById('taxExp').value);
+  const netInc = ebt + taxExp;
+
+  // dep from SGA (second sga input = 감가상각비)
+  const sgaEls = document.querySelectorAll('.is-sga');
+  const dep = parseNum(sgaEls[1] ? sgaEls[1].value : 0);
+  const ebitda = opInc + Math.abs(dep);
+
+  // interest expense
+  const nonopEls = document.querySelectorAll('.is-nonop');
+  const intExp = Math.abs(parseNum(nonopEls[1] ? nonopEls[1].value : 0));
+
+  setValue('grossProfit', fmt(grossP));
+  setValue('totalSGA', fmt(totalSGA));
+  setValue('operatingIncome', fmt(opInc));
+  setValue('ebt', fmt(ebt));
+  setValue('netIncome', fmt(netInc));
+  setValue('ebitda', fmt(ebitda));
+  setValue('icr', intExp > 0 ? fmtX(opInc / intExp) : '—');
+  setValue('opMargin', rev > 0 ? fmtPct(opInc / rev * 100) : '—');
+  setValue('netMargin', rev > 0 ? fmtPct(netInc / rev * 100) : '—');
+
+  window._is = { rev, cogs, grossP, opInc, ebt, netInc, ebitda, intExp };
+  calcRatios();
+}
+
+// ── 재무비율 계산 ──
+function calcRatios() {
+  const bs = window._bs || {};
+  const is = window._is || {};
+  const { currA=0, currL=0, totalL=0, equity=0, totalA=0 } = bs;
+  const { rev=0, opInc=0, netInc=0, intExp=0 } = is;
+
+  setRatio('r-liquidity', currL > 0 ? fmtPct(currA/currL*100) : '—', currA/currL >= 1 ? 'good' : 'bad');
+  setRatio('r-debt', equity > 0 ? fmtPct(totalL/equity*100) : '자본잠식', totalL/equity <= 2 ? 'good' : 'bad');
+  setRatio('r-equity', totalA > 0 ? fmtPct(equity/totalA*100) : '—', equity/totalA >= 0.3 ? 'good' : 'bad');
+  setRatio('r-opmargin', rev > 0 ? fmtPct(opInc/rev*100) : '—', opInc/rev >= 0.05 ? 'good' : opInc > 0 ? 'neutral' : 'bad');
+  setRatio('r-netmargin', rev > 0 ? fmtPct(netInc/rev*100) : '—', netInc > 0 ? 'good' : 'bad');
+  setRatio('r-roe', equity > 0 ? fmtPct(netInc/equity*100) : '—', netInc/equity >= 0.05 ? 'good' : netInc > 0 ? 'neutral' : 'bad');
+  setRatio('r-ato', totalA > 0 ? fmtX(rev/totalA) : '—', 'neutral');
+  setRatio('r-icr2', intExp > 0 ? fmtX(opInc/intExp) : '—', opInc/intExp >= 1.5 ? 'good' : 'bad');
+
+  // 자본잠식
+  const capitalStock = parseNum(document.querySelectorAll('.bs-equity')[0]?.value || 0);
+  const retained = parseNum(document.getElementById('retainedEarnings')?.value || 0);
+  if (retained < 0 && capitalStock > 0) {
+    const erosionRate = Math.abs(retained) / capitalStock * 100;
+    setRatio('r-erosion', fmtPct(erosionRate), erosionRate >= 50 ? 'bad' : 'neutral');
+  } else {
+    setRatio('r-erosion', '해당없음', 'neutral');
+  }
+
+  // 종합의견 생성
+  generateOpinion(bs, is);
+}
+
+function setRatio(id, val, state) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = val;
+  el.className = 'ratio-value ratio-' + (state === 'good' ? 'good' : state === 'bad' ? 'bad' : 'neutral');
+}
+
+function generateOpinion(bs, is) {
+  const el = document.getElementById('creditOpinion');
+  if (!el) return;
+  const { currA=0, currL=0, totalL=0, equity=0, totalA=0 } = bs;
+  const { rev=0, opInc=0, netInc=0 } = is;
+  if (totalA === 0) { el.innerHTML = '재무상태표와 손익계산서를 입력하면 종합의견이 생성됩니다.'; return; }
+
+  const liq = currL > 0 ? currA/currL*100 : 0;
+  const dbt = equity > 0 ? totalL/equity*100 : 9999;
+  const opM = rev > 0 ? opInc/rev*100 : 0;
+  let pts = 0;
+  if (liq >= 100) pts++; if (dbt <= 200) pts++; if (opInc > 0) pts++; if (netInc > 0) pts++;
+  const grade = pts >= 4 ? '양호' : pts >= 2 ? '보통' : '부진';
+  const gradeColor = pts >= 4 ? '#1E8C5A' : pts >= 2 ? '#D97706' : '#C0392B';
+
+  el.innerHTML = `
+    <span style="font-size:15px;font-weight:800;color:${gradeColor};">▶ 재무 종합등급: ${grade} (${pts}/4점)</span><br><br>
+    • 유동성: 유동비율 <strong>${liq.toFixed(0)}%</strong> — ${liq>=100?'✅ 양호 (단기채무 대응 충분)':'❌ 주의 (단기유동성 부족)'}<br>
+    • 안정성: 부채비율 <strong>${equity>0?dbt.toFixed(0):'자본잠식'}%</strong> — ${dbt<=200?'✅ 양호':'❌ 과부채 위험'}<br>
+    • 수익성: 영업이익률 <strong>${opM.toFixed(1)}%</strong> — ${opM>=5?'✅ 양호':'⚠️ 수익성 개선 필요'}<br>
+    • 당기순이익: <strong>${netInc>=0?'흑자':'적자'}</strong> (${fmt(netInc)}천원)<br><br>
+    <span style="color:var(--text-muted);font-size:11px;">※ 위 의견은 입력 수치 기반 자동생성 참고값이며, 실제 여신심사는 담당자가 종합 판단합니다.</span>
+  `;
+}
+
+// ── 자본잠식 감지 ──
+function checkErosion() {
+  const val = parseNum(document.getElementById('retainedEarnings').value);
+  const alertEl = document.getElementById('erosionAlertSmall');
+  if (val < 0) alertEl.classList.remove('hidden');
+  else alertEl.classList.add('hidden');
+}
+
+// ── 감사의견 감지 ──
+function checkAudit() {
+  const val = document.getElementById('auditOpinion').value;
+  const alertEl = document.getElementById('auditWarn');
+  if (val !== '적정') alertEl.classList.remove('hidden');
+  else alertEl.classList.add('hidden');
+}
+
+// ── 회계기준 토글 ──
+function toggleAcctStd() {
+  const std = document.getElementById('acctStd').value;
+  document.getElementById('sb-std').textContent = std === 'IFRS' ? 'K-IFRS' : 'K-GAAP';
+}
+
+// ── 섹션 탭 ──
+function showSecTab(tabId, el) {
+  document.querySelectorAll('[id^="tab-"]').forEach(t => t.classList.add('hidden'));
+  document.querySelectorAll('.sec-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(tabId).classList.remove('hidden');
+  el.classList.add('active');
+}
+
+// ── 업종 선택 ──
+const bizContext = {
+  '외감': { title:'5주차 — 외감법인기업 재무제표 입력', desc:'외부감사를 받는 주식회사의 감사보고서를 기반으로 여신심사 재무제표 DB에 입력합니다.', badge:'외감법인 · IFRS/GAAP', notice:'외감법인: 자산총액 500억원 이상 법인은 외부감사 의무(외감법). 감사보고서 원본을 반드시 확인하세요.' },
+  '법인제조': { title:'6주차 — 법인사업자(제조업) 재무제표 입력', desc:'비외감 법인 제조업체의 세무신고용 재무제표를 기준으로 입력합니다. 제조원가명세서 포함 여부 확인.', badge:'법인 · 제조업', notice:'제조업 법인: 재고자산(원재료/재공품/제품) 세부 내역 파악 필수. 제조원가명세서가 있으면 원가구조 추가 확인.' },
+  '법인임대': { title:'7주차 — 법인사업자(임대업) 재무제표 입력', desc:'임대업 법인의 재무제표. 투자부동산과 임대보증금(부채) 처리가 핵심입니다.', badge:'법인 · 임대업', notice:'임대업: 임대보증금은 부채로 계상, 임대수익이 매출. IFRS는 투자부동산 공정가치 모형 적용 가능하므로 주석 확인.' },
+  '외부신용': { title:'8주차 — 외부신용평가(NICE/KED) 재무자료 변환 입력', desc:'나이스, KED에서 제공한 신용평가 재무자료를 은행 내부 시스템 계정 체계로 변환하여 입력합니다.', badge:'NICE · KED 변환', notice:'NICE/KED 리포트의 계정명이 은행 시스템과 다를 수 있습니다. 변환 기준표(⑤ 탭)를 참고하여 매핑하세요. 불명확한 항목은 멘토에게 확인.' },
+  '개인자본잠식': { title:'9~10주차 — 개인사업자(자본잠식) 수정재무제표 입력', desc:'이익잉여금이 음수인 자본잠식 개인사업자의 수정재무제표를 작성하여 입력합니다.', badge:'개인사업자 · 자본잠식', notice:'⚠️ 자본잠식 상태입니다. 이익잉여금(결손금) 음수 입력 후 자동 경고 확인. 수정재무제표 작성 사유 기록 후 멘토 승인 필요.' },
+  '개인제조': { title:'11주차 — 개인사업자(제조업) 재무제표 입력', desc:'개인 제조업체의 세무신고 재무제표를 입력합니다. 대표자 인건비 처리에 주의.', badge:'개인사업자 · 제조업', notice:'개인사업자 제조업: 대표자 급여는 통상 비용으로 미계상. 적정 인건비를 추정해 영업이익 조정 여부 검토.' },
+  '개인임대': { title:'12주차 — 개인사업자(임대업) 재무제표 입력', desc:'개인 임대사업자의 재무제표를 입력합니다. 부동산 보유 현황과 임대보증금 확인이 핵심입니다.', badge:'개인사업자 · 임대업', notice:'임대 개인사업자: 임대보증금 규모 확인. 부동산 취득가액 vs 현재 감정평가액 차이 파악. 미수임대료 발생 여부도 확인.' }
+};
+
+function selectBiz(key) {
+  document.querySelectorAll('.biz-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + key)?.classList.add('active');
+  const ctx = bizContext[key] || {};
+  document.getElementById('ctxTitle').textContent = ctx.title || '';
+  document.getElementById('ctxDesc').textContent = ctx.desc || '';
+  document.getElementById('ctxBadge').textContent = ctx.badge || '';
+  if (ctx.notice) document.getElementById('bizNotice').textContent = ctx.notice;
+
+  // 자본잠식이면 이익잉여금 음수로 예시
+  if (key === '개인자본잠식') {
+    const re = document.getElementById('retainedEarnings');
+    if (re && parseNum(re.value) >= 0) {
+      re.value = '-380,000';
+      re.classList.add('warn');
+      calcBS(); checkErosion();
+    }
+  }
+}
+
+function selectWeek(n) {}
+function selectWeekBiz(key) { selectBiz(key); }
+
+// ── NICE/KED 변환 표 ──
+const convertData = [
+  { niceLabel:'매출액', niceVal:'8,500,000', bankLabel:'매출액', bankVal:'8,500,000', note:'동일' },
+  { niceLabel:'영업비용', niceVal:'8,120,000', bankLabel:'매출원가 + 판관비', bankVal:'8,120,000', note:'분리 입력' },
+  { niceLabel:'EBIT', niceVal:'380,000', bankLabel:'영업이익', bankVal:'380,000', note:'동일' },
+  { niceLabel:'자산총액', niceVal:'9,165,000', bankLabel:'자산총계', bankVal:'9,165,000', note:'동일' },
+  { niceLabel:'부채총액', niceVal:'6,750,000', bankLabel:'부채총계', bankVal:'6,750,000', note:'동일' },
+  { niceLabel:'자기자본', niceVal:'2,415,000', bankLabel:'자본총계', bankVal:'2,415,000', note:'동일' },
+  { niceLabel:'차입금계', niceVal:'4,300,000', bankLabel:'단기차입+유동성장기+장기차입+사채', bankVal:'4,300,000', note:'세부 분류' },
+  { niceLabel:'금융비용', niceVal:'180,000', bankLabel:'이자비용', bankVal:'180,000', note:'동일' },
+  { niceLabel:'유형자산(순액)', niceVal:'3,300,000', bankLabel:'유형자산-감가상각누계액', bankVal:'3,300,000', note:'감가상각 별도' },
+];
+
+function buildConvertRows() {
+  const wrap = document.getElementById('convertRows');
+  wrap.innerHTML = convertData.map(r => `
+    <div class="convert-row">
+      <div class="convert-left">
+        <div class="convert-label">NICE/KED 계정명</div>
+        <div class="convert-name">${r.niceLabel}</div>
+        <div class="convert-value">${r.niceVal} 천원</div>
+      </div>
+      <div class="convert-arrow">→</div>
+      <div class="convert-right">
+        <div class="convert-label">은행 입력 계정</div>
+        <div class="convert-name">${r.bankLabel}</div>
+        <div class="convert-value">${r.bankVal} 천원 <span style="font-size:10px;font-weight:400;color:#6B7280;">(${r.note})</span></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// 체크박스 토글
+function toggleCaution(cb) {
+  cb.closest('.caution-item').classList.toggle('checked', cb.checked);
+}
+
+// ── 초기 실행 ──
+window.addEventListener('DOMContentLoaded', () => {
+  buildConvertRows();
+  calcBS();
+  calcIS();
+});
+</script>
+</body>
+</html>
